@@ -1,0 +1,1 @@
+Run "npm install" to install local packages, and "node index.js" to start the local server (or nodemon if you want to the server to update itself as soon as you change something in the code)

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>InfoVis project Group 4</title>
+		<script src="//d3js.org/d3.v4.min.js" charset="utf-8"></script>
+		<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+		<script src="https://unpkg.com/topojson@3"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js"> </script>
+
+		<link rel="stylesheet" type="text/css" href="main.css"> 
+		<link rel="stylesheet" type="text/css" href="patterns.css">
+	</head>
+<body>
+<div id="container-tooltip">
+<h1 class="main" style="font-size: 25px;text-align: center;"> 30 years of Renewable Energy Production in Europe
+  
+</h1>
+</div>
+
+<div id="container">
+
+
+<div id="container-map">
+	<!-- Title -->
+	<h1 class="map tooltip"></h1>
+
+	<!-- Legend & selector container Slider & Play button -->
+	<div id="direction">
+		<svg id="legend"><g transform="translate(0,20)"></g></svg>
+		<select id="country"></select>
+		<select id="energy"></select>
+		<div style="text-align:center;">
+		<button id="play-button">Play</button>
+	</div>
+	
+	</div>
+		<div id="bottom">
+		<div id="left">1986</div>
+		<svg id="slider-container"></svg>
+		<div id="right">2015</div>
+	</div>	
+	<!-- Map container -->
+	<svg id="map"></svg>
+
+
+	
+
+	
+	
+</div> 
+<div id="container-stacked">
+<!-- Stacked area chart -->
+<h1 class="stacked tooltip"></h1>
+
+<div id="stacked_area"></div>
+</div>
+
+<div id="container-aster">
+<!-- Aster plot -->
+	<h1 class="aster tooltip">Potential renewable production vs total energy production<span class="tooltiptext">This graph shows the potential % of the total energy production per country per year that could have been renewable if they had the same infrastructure installed as in the year 2015. The values are both wind and solar potential. Move the slider on above the map or click on play for a specific year.</span></h1>
+	<svg id="aster"></svg>
+
+</div>
+</div>
+
+
+
+</body>
+
+<!-- Importing map files -->
+<script type="text/javascript" src="chart-map/map.js"></script> 
+<script type="text/javascript" src="chart-map/legend.js"></script> 
+
+<script type="text/javascript" src="slider.js"></script> 
+
+<!-- Importing stacked area chart files -->
+<script type="text/javascript" src="chart-stacked/stacked.js"></script>
+
+<!-- Importing aster plot files -->
+<script src="chart-aster/d3-tip.js"></script>
+<script type="text/javascript" src="chart-aster/aster.js"></script>
+
+
+<script>
+
+// Variable used to store the current selected year 
+var currentYear = 1986; 
+
+// Variable used to store the raw data
+var raw_data;
+
+// variable used to store the data mapped with each country
+var data_per_country;
+
+// variable used to store the data for one specific country
+var countryData;
+
+// variable used to store the data for the aster plot (one specific year)
+var aster_data;
+
+
+d3.queue()
+	.defer(d3.json, "maps/custom-geo-world.json")
+	.defer(d3.tsv, "data/infovis-13-05.tsv")
+	.await(function(error, topology, data) {
+
+		data.forEach(function(d) {
+			d.date = d3.timeParse("%Y")(d.year);				
+		})
+
+		raw_data = data.sort(function(a, b) {
+				return a.date - b.date;
+			});
+
+		data_per_country = d3.map(raw_data, function(d){ return d.name; })
+			.values()
+			.sort(function(a, b){
+				return d3.ascending(a.name, b.name);
+			}); // alphabetically sorted (for dropdown)
+
+		// Show Europe chart first 
+		countryData = raw_data.filter(d => d.iso == "EU");
+
+		// get data from a specific year (without taking Europe data)
+		aster_data = raw_data.filter(d => d.year == currentYear && d.iso != "EU"); 
+
+				
+		// Map
+		drawMap(topology);
+
+		// Stacked chart
+		drawStackedChart();
+		
+		// Aster plot
+		drawAster();
+});
+
+
+
+
+
+// Function used to scroll the page when a country is selected
+function scrollToElement(element, duration = 0, delay = 100, easing = d3.easeLinear, endCallback = () => {}) {
+  var offsetTop = window.pageYOffset || document.documentElement.scrollTop
+  d3.transition()
+    .on("end", endCallback)
+    .delay(delay)
+    .duration(duration)
+    .ease(easing)
+    .tween("scroll", (offset => () => {
+      var i = d3.interpolateNumber(offsetTop, offset);
+      return t => scrollTo(0, i(t))
+    })(offsetTop + element.getBoundingClientRect().top));
+}
+
+</script>
+
+</html>
